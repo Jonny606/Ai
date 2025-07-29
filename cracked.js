@@ -8,6 +8,7 @@ function mobileCheck() {
     return jovianne;
 }
 var isMobile = mobileCheck();
+/*
 if (partner == "gdsub") {
     var allowed = false;
     if (document.referrer.indexOf("yeeteeyt.github.io") != -1) {
@@ -21,6 +22,7 @@ if (partner == "gdsub") {
             }
         }
     };
+    */
     if (!allowed) {
         alert("The game only works if it is embedded in an iframe on whitelisted websites.");
         throw new Error("The game only works if it is embedded in an iframe on whitelisted websites.");
