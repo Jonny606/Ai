@@ -49,10 +49,6 @@
 
     <!-- Your React App code goes here -->
     <script type="text/babel">
-        // The following code is your React component from the Canvas.
-        // The import statements for React hooks are removed as they are available on the global `React` object
-        // when using the CDN version.
-
         // Firebase configuration from the environment
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
@@ -117,7 +113,7 @@
         };
 
         // The main Chatbot component
-        export default function App() {
+        function App() {
           const [messages, setMessages] = React.useState([]);
           const [input, setInput] = React.useState('');
           const [isSending, setIsSending] = React.useState(false);
@@ -150,13 +146,12 @@
                 console.log(`User ID: ${user.uid}`);
                 
                 // Listen for new messages in Firestore
-                // Note: orderBy() is removed to avoid index errors. Data will be sorted in-memory.
                 const q = window.firebase.query(window.firebase.collection(db, CHAT_COLLECTION));
                 const unsubscribeSnapshot = window.firebase.onSnapshot(q, (snapshot) => {
                   const newMessages = snapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
-                  })).sort((a, b) => a.timestamp.seconds - b.timestamp.seconds); // Sort by timestamp
+                  })).sort((a, b) => a.timestamp.seconds - b.timestamp.seconds);
                   setMessages(newMessages);
                 });
 
