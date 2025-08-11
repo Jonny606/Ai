@@ -50,7 +50,8 @@
     <!-- Your React App code goes here -->
     <script type="text/babel">
         // The following code is your React component from the Canvas.
-        import { useState, useRef, useEffect } from 'react';
+        // The import statements for React hooks are removed as they are available on the global `React` object
+        // when using the CDN version.
 
         // Firebase configuration from the environment
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
@@ -88,7 +89,7 @@
 
         // Component for a copyable code block
         const ClipboardCopyButton = ({ textToCopy }) => {
-          const [isCopied, setIsCopied] = useState(false);
+          const [isCopied, setIsCopied] = React.useState(false);
 
           const handleCopy = () => {
             try {
@@ -117,11 +118,11 @@
 
         // The main Chatbot component
         export default function App() {
-          const [messages, setMessages] = useState([]);
-          const [input, setInput] = useState('');
-          const [isSending, setIsSending] = useState(false);
-          const [userId, setUserId] = useState(null);
-          const messagesEndRef = useRef(null);
+          const [messages, setMessages] = React.useState([]);
+          const [input, setInput] = React.useState('');
+          const [isSending, setIsSending] = React.useState(false);
+          const [userId, setUserId] = React.useState(null);
+          const messagesEndRef = React.useRef(null);
 
           // Auto-scroll to the bottom of the chat window
           const scrollToBottom = () => {
@@ -129,7 +130,7 @@
           };
 
           // Sign in anonymously and set up the chat listener
-          useEffect(() => {
+          React.useEffect(() => {
             const signIn = async () => {
               try {
                 if (initialAuthToken) {
@@ -168,7 +169,7 @@
             return () => unsubscribe();
           }, []);
 
-          useEffect(() => {
+          React.useEffect(() => {
             scrollToBottom();
           }, [messages]);
 
