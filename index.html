@@ -11,27 +11,10 @@
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <!-- Load Babel for JSX support -->
     <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Load Firebase SDKs -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // This script block makes the Firebase functions globally available to the main app script
-        window.firebase = {
-            initializeApp,
-            getAuth,
-            signInAnonymously,
-            onAuthStateChanged,
-            signInWithCustomToken,
-            getFirestore,
-            collection,
-            addDoc,
-            onSnapshot,
-            query,
-            serverTimestamp
-        };
-    </script>
+    <!-- Load Firebase SDKs as global scripts to avoid module conflicts -->
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"></script>
     <!-- Google Fonts for "Inter" -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -54,10 +37,10 @@
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-        // Initialize Firebase app using the globally available functions
-        const app = window.firebase.initializeApp(firebaseConfig);
-        const auth = window.firebase.getAuth(app);
-        const db = window.firebase.getFirestore(app);
+        // Initialize Firebase app using the globally available functions from the script tags
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth.getAuth(app);
+        const db = firebase.firestore.getFirestore(app);
 
         const CHAT_COLLECTION = `artifacts/${appId}/public/data/chats`;
 
@@ -130,9 +113,9 @@
             const signIn = async () => {
               try {
                 if (initialAuthToken) {
-                  await window.firebase.signInWithCustomToken(auth, initialAuthToken);
+                  await firebase.auth.signInWithCustomToken(auth, initialAuthToken);
                 } else {
-                  await window.firebase.signInAnonymously(auth);
+                  await firebase.auth.signInAnonymously(auth);
                 }
               } catch (error) {
                 console.error("Error signing in:", error);
@@ -140,14 +123,14 @@
             };
             signIn();
 
-            const unsubscribe = window.firebase.onAuthStateChanged(auth, (user) => {
+            const unsubscribe = firebase.auth.onAuthStateChanged(auth, (user) => {
               if (user) {
                 setUserId(user.uid);
                 console.log(`User ID: ${user.uid}`);
                 
                 // Listen for new messages in Firestore
-                const q = window.firebase.query(window.firebase.collection(db, CHAT_COLLECTION));
-                const unsubscribeSnapshot = window.firebase.onSnapshot(q, (snapshot) => {
+                const q = firebase.firestore.query(firebase.firestore.collection(db, CHAT_COLLECTION));
+                const unsubscribeSnapshot = firebase.firestore.onSnapshot(q, (snapshot) => {
                   const newMessages = snapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
@@ -175,7 +158,7 @@
             const userMessage = {
               text: input,
               sender: 'user',
-              timestamp: window.firebase.serverTimestamp()
+              timestamp: firebase.firestore.serverTimestamp()
             };
 
             setIsSending(true);
@@ -183,7 +166,7 @@
 
             try {
               // Add user message to Firestore
-              await window.firebase.addDoc(window.firebase.collection(db, CHAT_COLLECTION), userMessage);
+              await firebase.firestore.addDoc(firebase.firestore.collection(db, CHAT_COLLECTION), userMessage);
 
               // Call the Gemini API to get a response
               const responseText = await getGeminiResponse(input);
@@ -191,18 +174,18 @@
               const botMessage = {
                 text: responseText,
                 sender: 'gemini',
-                timestamp: window.firebase.serverTimestamp()
+                timestamp: firebase.firestore.serverTimestamp()
               };
               
               // Add the bot's response to Firestore
-              await window.firebase.addDoc(window.firebase.collection(db, CHAT_COLLECTION), botMessage);
+              await firebase.firestore.addDoc(firebase.firestore.collection(db, CHAT_COLLECTION), botMessage);
             } catch (error) {
               console.error("Error sending message:", error);
               // Fallback message if something goes wrong
-              await window.firebase.addDoc(window.firebase.collection(db, CHAT_COLLECTION), {
+              await firebase.firestore.addDoc(firebase.firestore.collection(db, CHAT_COLLECTION), {
                 text: "I'm sorry, I couldn't generate a response at this time.",
                 sender: 'gemini',
-                timestamp: window.firebase.serverTimestamp()
+                timestamp: firebase.firestore.serverTimestamp()
               });
             } finally {
               setIsSending(false);
