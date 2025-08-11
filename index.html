@@ -51,19 +51,16 @@
     <script type="text/babel">
         // The following code is your React component from the Canvas.
         import { useState, useRef, useEffect } from 'react';
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
-        import { initializeApp } from 'firebase/app';
-        import { getFirestore, collection, addDoc, onSnapshot, query } from 'firebase/firestore';
 
         // Firebase configuration from the environment
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-        // Initialize Firebase app
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        // Initialize Firebase app using the globally available functions
+        const app = window.firebase.initializeApp(firebaseConfig);
+        const auth = window.firebase.getAuth(app);
+        const db = window.firebase.getFirestore(app);
 
         const CHAT_COLLECTION = `artifacts/${appId}/public/data/chats`;
 
@@ -136,9 +133,9 @@
             const signIn = async () => {
               try {
                 if (initialAuthToken) {
-                  await signInWithCustomToken(auth, initialAuthToken);
+                  await window.firebase.signInWithCustomToken(auth, initialAuthToken);
                 } else {
-                  await signInAnonymously(auth);
+                  await window.firebase.signInAnonymously(auth);
                 }
               } catch (error) {
                 console.error("Error signing in:", error);
@@ -146,15 +143,15 @@
             };
             signIn();
 
-            const unsubscribe = onAuthStateChanged(auth, (user) => {
+            const unsubscribe = window.firebase.onAuthStateChanged(auth, (user) => {
               if (user) {
                 setUserId(user.uid);
                 console.log(`User ID: ${user.uid}`);
                 
                 // Listen for new messages in Firestore
                 // Note: orderBy() is removed to avoid index errors. Data will be sorted in-memory.
-                const q = query(collection(db, CHAT_COLLECTION));
-                const unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
+                const q = window.firebase.query(window.firebase.collection(db, CHAT_COLLECTION));
+                const unsubscribeSnapshot = window.firebase.onSnapshot(q, (snapshot) => {
                   const newMessages = snapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
@@ -182,7 +179,7 @@
             const userMessage = {
               text: input,
               sender: 'user',
-              timestamp: new Date()
+              timestamp: window.firebase.serverTimestamp()
             };
 
             setIsSending(true);
@@ -190,7 +187,7 @@
 
             try {
               // Add user message to Firestore
-              await addDoc(collection(db, CHAT_COLLECTION), userMessage);
+              await window.firebase.addDoc(window.firebase.collection(db, CHAT_COLLECTION), userMessage);
 
               // Call the Gemini API to get a response
               const responseText = await getGeminiResponse(input);
@@ -198,18 +195,18 @@
               const botMessage = {
                 text: responseText,
                 sender: 'gemini',
-                timestamp: new Date()
+                timestamp: window.firebase.serverTimestamp()
               };
               
               // Add the bot's response to Firestore
-              await addDoc(collection(db, CHAT_COLLECTION), botMessage);
+              await window.firebase.addDoc(window.firebase.collection(db, CHAT_COLLECTION), botMessage);
             } catch (error) {
               console.error("Error sending message:", error);
               // Fallback message if something goes wrong
-              await addDoc(collection(db, CHAT_COLLECTION), {
+              await window.firebase.addDoc(window.firebase.collection(db, CHAT_COLLECTION), {
                 text: "I'm sorry, I couldn't generate a response at this time.",
                 sender: 'gemini',
-                timestamp: new Date()
+                timestamp: window.firebase.serverTimestamp()
               });
             } finally {
               setIsSending(false);
