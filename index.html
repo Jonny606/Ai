@@ -3,19 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI-Powered Chatbot</title>
+    <title>AI Chatbot</title>
+    <!-- Use Tailwind CSS for a clean, modern look -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { font-family: sans-serif; }
-        #chatbox { width: 400px; height: 300px; border: 1px solid #ccc; padding: 10px; overflow-y: scroll; }
-        #inputBox { width: 100%; padding: 8px; box-sizing: border-box; }
+        /* Custom styles for the chat interface */
+        .chat-message {
+            margin-bottom: 0.5rem;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            max-width: 80%;
+        }
+        .user-message {
+            background-color: #f3f4f6;
+            align-self: flex-end;
+        }
+        .ai-message {
+            background-color: #d1fae5;
+            align-self: flex-start;
+        }
     </style>
 </head>
-<body>
-    <h1>AI Chat</h1>
-    <div id="chatbox"></div>
-    <input type="text" id="inputBox" placeholder="Type your message...">
-    <button onclick="sendMessage()">Send</button>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-xl flex flex-col h-[70vh]">
+        <!-- Chat header -->
+        <div class="mb-4">
+            <h1 class="text-2xl font-bold text-gray-800">Friendly AI Chat</h1>
+            <p class="text-sm text-gray-500">Ask the AI anything you want!</p>
+        </div>
+        
+        <!-- Chat messages display area -->
+        <div id="chat-container" class="flex-grow overflow-y-auto p-4 space-y-4 rounded-lg border border-gray-200 mb-4">
+            <div class="chat-message ai-message shadow">
+                Hello! I am ready to listen and do whatever you ask. How can I help you today?
+            </div>
+        </div>
 
-    <script src="app.js"></script>
+        <!-- User input area -->
+        <div class="flex">
+            <input type="text" id="user-input" placeholder="Type your message..." class="flex-grow p-3 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+            <button id="send-btn" class="bg-green-500 text-white p-3 rounded-r-lg hover:bg-green-600 transition-colors duration-200">
+                Send
+            </button>
+        </div>
+    </div>
+
+    <!-- The script for handling user interaction and API calls -->
+    <script type="module">
+        const sendBtn = document.getElementById('send-btn');
+        const userInput = document.getElementById('user-input');
+        const chatContainer = document.getElementById('chat-container');
+
+        // Function to create and display a new message in the chat
+        function addMessageToChat(message, isUser = true) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('chat-message', 'shadow', isUser ? 'user-message' : 'ai-message');
+            messageElement.textContent = message;
+            chatContainer.appendChild(messageElement);
+            chatContainer.scrollTop = chatContainer.scrollHeight; // Auto-scroll to the bottom
+        }
+
+        // Function to send a message to the backend
+        async function sendMessage() {
+            const userMessage = userInput.value.trim();
+            if (userMessage === '') return;
+
+            addMessageToChat(userMessage);
+            userInput.value = '';
+
+            try {
+                // Send the user's message to the server
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: userMessage })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                addMessageToChat(data.aiResponse, false); // Display the AI's response
+            } catch (error) {
+                console.error('Error:', error);
+                addMessageToChat('Sorry, something went wrong. Please try again later.', false);
+            }
+        }
+
+        // Add event listeners for the button click and 'Enter' key press
+        sendBtn.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
 </body>
 </html>
